@@ -51,7 +51,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-      <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
+        <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
         {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
       </View>
 
@@ -72,7 +72,7 @@ export default function App() {
       }
 
       <EmojiPicker isVisible={isModalVisible} onClose={onModalClose}>
-        {/* A lista com Emojis será inserida aqui */}
+        <EmojiList onSelect={setPickedEmoji} onCloseModal={onModalClose} />
       </EmojiPicker>
 
 
