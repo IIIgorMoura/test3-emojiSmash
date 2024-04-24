@@ -1,7 +1,13 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 
-import { useState } from 'react';
+import domtoimage from 'dom-to-image';
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as MediaLibrary from 'expo-media-library';
+
+import { captureRef } from 'react-native-view-shot';
+import { useState, useRef } from 'react';
 
 import ImageViewer from "./components/ImageViewer";
 import * as ImagePicker from 'expo-image-picker';
@@ -22,6 +28,14 @@ export default function App() {
   const [showAppOptions, setShowAppOptions] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [pickedEmoji, setPickedEmoji] = useState(null);
+
+
+  const [status, requestPermission] = MediaLibrary.usePermissions();
+
+  if (status === null) {
+    requestPermission();
+  }
+
 
   const onAddSticker = () => {
     setIsModalVisible(true);
@@ -48,11 +62,47 @@ export default function App() {
     }
   };
 
+  const onSaveImageAsync = async () => {
+    if (Platform.OS !== 'web') {
+      try {
+        const localUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
+        await MediaLibrary.saveToLibraryAsync(localUri);
+        if (localUri) {
+          alert('Saved!');
+        }
+      } catch (erro) {
+        console.log(erro);
+      }
+    } else {
+      try {
+        const dataUrl = await domtoimage.toPng(imageRef.current, {
+          quality: 0.95,
+          width: 320,
+          height: 440,
+        });
+  
+        let link = document.createElement('a');
+        link.download = 'sticker-smash.png';
+        link.href = dataUrl;
+        link.click();
+      } catch (erro) {
+        console.log(erro);
+      }
+    }
+  };
+
+  const imageRef = useRef();
+
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <View style={styles.imageContainer}>
-        <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
-        {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+        <View ref={imageRef} collapsable={false}>
+          <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
+          {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+        </View>
       </View>
 
       {showAppOptions ? (
@@ -60,7 +110,7 @@ export default function App() {
           <View style={styles.optionsRow}>
             <IconButton icon="refresh" label="Reset" onPress={onReset} />
             <CircleButton onPress={onAddSticker} />
-            <IconButton icon="save-alt" label="Save" />
+            <IconButton icon="save-alt" label="Save" onPress={onSaveImageAsync}/>
           </View>
         </View>
       ) : (
@@ -76,8 +126,8 @@ export default function App() {
       </EmojiPicker>
 
 
-      <StatusBar style="auto" />
-    </View>
+      <StatusBar style="light" />
+    </GestureHandlerRootView>
 
 
   );
